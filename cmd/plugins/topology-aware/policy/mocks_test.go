@@ -367,6 +367,9 @@ type mockContainer struct {
 	returnValueForGetID                   string
 	returnValueForQOSClass                v1.PodQOSClass
 	pod                                   cache.Pod
+	cdiDeviceNames                        []string
+	cpusetCpus                            string
+	setCpusetCpusCalls                    []string
 }
 
 func (m *mockContainer) GetPod() (cache.Pod, bool) {
@@ -427,6 +430,9 @@ func (m *mockContainer) GetMounts() []*cache.Mount {
 }
 func (m *mockContainer) GetDevices() []*cache.Device {
 	panic("unimplemented")
+}
+func (m *mockContainer) GetCDIDeviceNames() []string {
+	return m.cdiDeviceNames
 }
 func (m *mockContainer) PrettyName() string {
 	return m.name
@@ -490,7 +496,9 @@ func (m *mockContainer) SetCPUPeriod(int64) {
 func (m *mockContainer) SetCPUQuota(int64) {
 	panic("unimplemented")
 }
-func (m *mockContainer) SetCpusetCpus(string) {
+func (m *mockContainer) SetCpusetCpus(cpus string) {
+	m.setCpusetCpusCalls = append(m.setCpusetCpusCalls, cpus)
+	m.cpusetCpus = cpus
 }
 func (m *mockContainer) SetCpusetMems(string) {
 }
@@ -585,7 +593,7 @@ func (m *mockContainer) GetCPUPeriod() int64 {
 	panic("unimplemented")
 }
 func (m *mockContainer) GetCpusetCpus() string {
-	panic("unimplemented")
+	return m.cpusetCpus
 }
 func (m *mockContainer) GetCpusetMems() string {
 	panic("unimplemented")
