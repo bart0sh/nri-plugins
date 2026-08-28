@@ -89,6 +89,10 @@ type ClaimStore interface {
 	Load() (map[types.UID]*ClaimState, error)
 }
 
+// ClaimUnprepare is called after a prepared claim is removed from plugin
+// state, while holding the resmgr lock.
+type ClaimUnprepare func(uid types.UID, allocs []ResultAlloc)
+
 // Deps holds the dependencies a policy binary must supply when constructing
 // a Plugin.
 type Deps struct {
@@ -113,6 +117,8 @@ type Deps struct {
 	CDIWriter CDIWriter
 	// ClaimStore persists and loads claim state via the resmgr cache.
 	ClaimStore ClaimStore
+	// ClaimUnprepare notifies the policy that a prepared claim was removed.
+	ClaimUnprepare ClaimUnprepare
 	// WithLock executes f while holding the resmgr write lock. All accesses
 	// to Handler state (ValidateClasses, DRADevices, Prepare, Unprepare, and
 	// RestoreClaims) must run inside WithLock.
