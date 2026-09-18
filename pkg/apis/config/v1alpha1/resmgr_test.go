@@ -17,6 +17,8 @@ package v1alpha1
 import (
 	"testing"
 
+	"sigs.k8s.io/yaml"
+
 	cpucfg "github.com/containers/nri-plugins/pkg/apis/config/v1alpha1/resmgr/control/cpu"
 )
 
@@ -48,4 +50,48 @@ func TestCommonConfigValidateLegacyCPUClasses(t *testing.T) {
 			t.Errorf("Validate() on nil = %v, want nil", err)
 		}
 	})
+}
+
+// TestCommonConfigDRA verifies that dra.enabled reaches CommonConfig from every
+// policy's configuration, and that leaving it out is distinguishable from
+// setting it to false.
+func TestCommonConfigDRA(t *testing.T) {
+	policies := []struct {
+		name string
+		new  func() ResmgrConfig
+	}{
+		{"topology-aware", func() ResmgrConfig { return &TopologyAwarePolicy{} }},
+		{"balloons", func() ResmgrConfig { return &BalloonsPolicy{} }},
+		{"template", func() ResmgrConfig { return &TemplatePolicy{} }},
+	}
+
+	enabled, disabled := true, false
+
+	configs := []struct {
+		name    string
+		spec    string
+		enabled *bool
+	}{
+		{"no dra section", "spec: {}", nil},
+		{"empty dra section", "spec:\n  dra: {}\n", nil},
+		{"dra disabled", "spec:\n  dra:\n    enabled: false\n", &disabled},
+		{"dra enabled", "spec:\n  dra:\n    enabled: true\n", &enabled},
+	}
+
+	for _, p := range policies {
+		for _, c := range configs {
+			t.Run(p.name+"/"+c.name, func(t *testing.T) {
+				cfg := p.new()
+				if err := yaml.Unmarshal([]byte(c.spec), cfg); err != nil {
+					t.Fatalf("failed to unmarshal %q: %v", c.spec, err)
+				}
+				switch got := cfg.CommonConfig().DRA.Enabled; {
+				case (got == nil) != (c.enabled == nil):
+					t.Errorf("dra.enabled is %v, expected %v", got, c.enabled)
+				case got != nil && *got != *c.enabled:
+					t.Errorf("dra.enabled is %v, expected %v", *got, *c.enabled)
+				}
+			})
+		}
+	}
 }
