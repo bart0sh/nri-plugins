@@ -314,7 +314,7 @@ Set `k8s_release=installed` to run the tests on the existing Kubernetes cluster:
 
 ```shell
 test_hw_addr=test@10.0.0.1 test_hw_key=~/.ssh/testbox \
-    containerd_release=installed k8s_release=installed \
+    containerd_release=installed k8s_release=installed helm_release=installed \
     ./run_tests.sh policies.test-suite
 ```
 
@@ -322,8 +322,9 @@ The cluster is then left as it is. Provisioning does not install or change
 Kubernetes packages, repositories, the CNI configuration, sysctl settings,
 kernel modules or kubeconfigs, does not remove taints, and does not run
 `kubeadm init` or `kubeadm reset`. The Kubernetes version and the node name are
-taken from the cluster. Provisioning still installs Helm and the packages the
-framework uses.
+taken from the cluster. Provisioning still installs the packages the framework
+uses, and Helm unless `helm_release=installed` is set too. Then it installs no
+Helm, and the tests use the one on root's `PATH`.
 
 `installed` needs `test_hw_addr`. It cannot be used with `provision=all`,
 because the run must not take the cluster down, or with `k8s_feature_gates`,
